@@ -78,7 +78,7 @@ def build_chain() -> Any:
 - Check from the top of the items to the SUBTOTAL line. Discounts may be on a separate line below the item. Look for discount/promotion/coupon line.
 - Do not include item prices, bag charges, zero-value coupons, rounding, or payment/card amounts as discounts. Do not count any discount twice.
 
-Before answering, scan the item section once more and make sure each printed discount line has one matching number in discounts. Use the amount without its minus sign. Return JSON only."""),
+Before answering, scan the item section once more and make sure each printed discount line has one matching number in discounts. Use the amount without its minus sign. Also check negative amounts that reduce item prices even when their wording does not say discount, promotion, coupon, or save; include each once, except ROUNDING. Return JSON only."""),
         ("human", [
             {"type": "text", "text": "Parse this receipt."},
             {"type": "image_url", "image_url": {"url": "{image_url}"}},
