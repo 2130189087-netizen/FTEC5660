@@ -48,6 +48,21 @@ DeepSeek Flash model. JPEG, PNG, GIF, and WebP inputs are accepted by the
 homework runner.
 
 
-## Homework 1 solution: 
-> to students: please fill your solution description here.
+## Homework 1 solution
+
+### Chain design
+
+```text
+Receipt pictures
+      ↓
+DeepSeek reads the receipts to tell the discounts and final payment
+      ↓
+Python adds the amounts to get two answers
+      ↓
+The answers are saved in results.csv
+```
+
+### Solution description
+
+I used DeepSeek to read the final payment, subtotal, and discounts from each receipt. For the first question, the program adds the final payment amounts. For the second question, it adds each subtotal and the discounts. The program then saves one answer for each question in `results.csv`.
 

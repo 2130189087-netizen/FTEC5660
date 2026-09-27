@@ -62,8 +62,31 @@ def build_chain() -> Any:
     Use the vision-capable DeepSeek Flash model named
     ``deepseek-v4-flash-vision-exp``. The API key is loaded from .env.
     """
-    ### YOUR CODE HERE
-    return None
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.output_parsers import JsonOutputParser
+    from langchain_deepseek import ChatDeepSeek
+
+    llm = ChatDeepSeek(model="deepseek-v4-flash-vision-exp", temperature=0)
+
+    prompt_parse = ChatPromptTemplate.from_messages([
+        ("system", """Read the whole receipt and return a JSON object with this format:
+{{"final_payment": number, "subtotal": number, "discounts": [number, ...]}}
+
+- final_payment is the amount paid after rounding.
+- subtotal is the amount printed on the SUBTOTAL line, before rounding.
+- discounts must contain one positive number for EVERY discount printed on the receipt. Copy the amount of each discount line; do not leave any out or combine them.
+- Check from the top of the items to the SUBTOTAL line. Discounts may be on a separate line below the item. Look for discount/promotion/coupon line.
+- Do not include item prices, bag charges, zero-value coupons, rounding, or payment/card amounts as discounts. Do not count any discount twice.
+
+Before answering, scan the item section once more and make sure each printed discount line has one matching number in discounts. Use the amount without its minus sign. Return JSON only."""),
+        ("human", [
+            {"type": "text", "text": "Parse this receipt."},
+            {"type": "image_url", "image_url": {"url": "{image_url}"}},
+        ]),
+    ])
+ 
+    chain = prompt_parse | llm | JsonOutputParser()
+    return chain
 
 
 def answer_queries(chain: Any, images: list[Path]) -> dict[str, Any]:
@@ -74,13 +97,23 @@ def answer_queries(chain: Any, images: list[Path]) -> dict[str, Any]:
 
         {QUERY_1: "HK$123.40", QUERY_2: "HK$150.00"}
 
-    Use the provided ``image_data_url(path)`` helper to put local images in
-    multimodal human messages. LangChain's ``batch`` method is one simple way
-    to process independent receipt-extraction prompts in parallel.
+    Use the provided ``image_data_url(path)`` helper to put each local image
+    in the prompt.
     """
-    ### YOUR CODE HERE
-    _ = (chain, images)
-    return {QUERY_1: DUMMY_RESPONSE, QUERY_2: DUMMY_RESPONSE}
+    total_spend = 0.0
+    total_without_discount = 0.0
+
+    for path in images:
+        data = chain.invoke({"image_url": image_data_url(path)})
+        total_spend += float(data["final_payment"])
+        total_without_discount += float(data["subtotal"])
+        total_without_discount += sum(abs(float(d)) for d in data["discounts"])
+
+    return {
+        QUERY_1: f"HK${total_spend:.2f}",
+        QUERY_2: f"HK${total_without_discount:.2f}",
+    }
+   
 
 
 # Everything below is provided runner/scoring code. No edits are needed.
